@@ -1,0 +1,22 @@
+{
+  "short_name": "WF TIS",
+  "name": "Wells Fargo TIS Feedback Capture",
+  "description": "Capture visitor feedback and turn conversations into structured innovation insights.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FAF9F7",
+  "theme_color": "#D52B1E",
+  "display": "standalone",
+  "orientation": "portrait"
+}

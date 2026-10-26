@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #FAF9F7;
+  color: #1A1A1C;
+}
+
+/* === LAYERED BACKGROUNDS === */
+
+.bg-summit-dark {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(213, 43, 30, 0.08), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 199, 44, 0.04), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(213, 43, 30, 0.05), transparent 70%),
+    #0A0A0B;
+}
+
+.bg-summit-light {
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(213, 43, 30, 0.03), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255, 199, 44, 0.03), transparent 70%),
+    #FAF9F7;
+}
+
+.bg-grid-dark {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-grid-light {
+  background-image:
+    linear-gradient(rgba(10, 10, 11, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 10, 11, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-diagonal {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 40px,
+    rgba(255, 255, 255, 0.015) 40px,
+    rgba(255, 255, 255, 0.015) 41px
+  );
+}
+
+/* === GLASS SURFACES === */
+
+.glass-dark {
+  background: rgba(28, 28, 31, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(10, 10, 11, 0.06);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* === GOLD ACCENT LINE === */
+
+.gold-line {
+  background: linear-gradient(90deg, transparent, rgba(255, 199, 44, 0.6), transparent);
+}
+
+.gold-line-solid {
+  background: linear-gradient(90deg, rgba(255, 199, 44, 0.8), rgba(255, 199, 44, 0.3));
+}
+
+/* === TEXT GRADIENTS === */
+
+.text-gradient-red {
+  background: linear-gradient(135deg, #D52B1E, #E83B2E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-gold-red {
+  background: linear-gradient(135deg, #FFC72C, #D52B1E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* === BUTTON GLOW === */
+
+.btn-red-glow {
+  background: linear-gradient(135deg, #D52B1E, #B01E15);
+  box-shadow: 0 4px 20px rgba(213, 43, 30, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn-red-glow:hover {
+  box-shadow: 0 6px 28px rgba(213, 43, 30, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.btn-red-glow:active {
+  box-shadow: 0 2px 12px rgba(213, 43, 30, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* === WAVEFORM === */
+
+.wave-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #D52B1E, #E83B2E);
+  transform-origin: center;
+}
+
+/* === SCROLLBAR === */
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(10, 10, 11, 0.15);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(10, 10, 11, 0.25);
+}
+
+/* === UTILITY === */
+
+button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea, button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
+  }
+}
