@@ -62,13 +62,12 @@ export function WelcomeScreen({ onStart, onSubmitFeedback }: WelcomeScreenProps)
           {['VOICE / TEXT', 'AI INSIGHT', 'ACTION'].map((step, i) => (
             <div key={step} className="flex items-center gap-2">
               <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  i === 0
-                    ? 'bg-[#FEF2F2] text-[#D52B1E] border border-[#F8C5C5]'
-                    : i === 1
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0
+                  ? 'bg-[#FEF2F2] text-[#D52B1E] border border-[#F8C5C5]'
+                  : i === 1
                     ? 'bg-[#FFFDF5] text-[#D4A017] border border-[#FFEBA8]'
                     : 'bg-[#F0F0F2] text-[#6B6B70]'
-                }`}
+                  }`}
               >
                 {i + 1}
               </div>
@@ -93,7 +92,7 @@ export function WelcomeScreen({ onStart, onSubmitFeedback }: WelcomeScreenProps)
                     window.localStorage.setItem('tis_anchor_name', e.target.value.trim());
                   }
                 }}
-                placeholder="e.g., Alex Johnson"
+                placeholder="e.g., Sabbu Krishna"
                 className="w-full pl-10 pr-4 py-3 bg-[#FAF9F7] rounded-xl border border-[#E8E8EA] text-sm text-[#1A1A1C] placeholder-[#9A9A9F] focus:outline-none focus:border-[#D52B1E] transition-all"
               />
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A9A9F]">
