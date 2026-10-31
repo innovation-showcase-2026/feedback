@@ -59,10 +59,7 @@ interface Window {
 }
 
 interface ImportMetaEnv {
-  VITE_GITHUB_OWNER?: string;
-  VITE_GITHUB_REPO?: string;
-  VITE_GITHUB_BRANCH?: string;
-  VITE_GITHUB_TOKEN?: string;
+  VITE_GROQ_API_KEY?: string;
 }
 
 interface ImportMeta {

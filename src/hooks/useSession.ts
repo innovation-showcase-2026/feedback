@@ -8,13 +8,19 @@ import type {
 } from '../types';
 import { SpeechToTextEngine } from '../engines/SpeechToTextEngine';
 import { FeedbackSLMEngine } from '../engines/FeedbackSLMEngine';
+import { GroqEngine, isGroqConfigured } from '../engines/GroqEngine';
 import { FirebaseRepository } from '../engines/FirebaseRepository';
 import { generateSessionId, nowISO } from '../utils/session';
 import { APP_CONFIG } from '../config';
 
 export function useSession() {
   const [phase, setPhase] = useState<SessionPhase>('welcome');
-  const [anchorName, setAnchorName] = useState('');
+  const [anchorName, setAnchorName] = useState(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('tis_anchor_name') || '';
+    }
+    return '';
+  });
   const [sessionId, setSessionId] = useState('');
   const [transcript, setTranscript] = useState('');
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
@@ -27,6 +33,7 @@ export function useSession() {
 
   const speechEngineRef = useRef<SpeechToTextEngine | null>(null);
   const slmEngineRef = useRef<FeedbackSLMEngine | null>(null);
+  const groqEngineRef = useRef<GroqEngine | null>(null);
   const firebaseRepoRef = useRef<FirebaseRepository | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -36,6 +43,9 @@ export function useSession() {
     }
     if (!slmEngineRef.current) {
       slmEngineRef.current = new FeedbackSLMEngine();
+    }
+    if (!groqEngineRef.current) {
+      groqEngineRef.current = new GroqEngine();
     }
     if (!firebaseRepoRef.current) {
       firebaseRepoRef.current = new FirebaseRepository();
@@ -65,7 +75,11 @@ export function useSession() {
     (name: string) => {
       initEngines();
       const id = generateSessionId(APP_CONFIG.sessionIdPrefix);
-      setAnchorName(name.trim() || 'Booth Anchor');
+      const cleanName = name.trim() || 'Booth Anchor';
+      setAnchorName(cleanName);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('tis_anchor_name', cleanName);
+      }
       setSessionId(id);
       setPhase('conversation');
       setTranscript('');
@@ -84,44 +98,100 @@ export function useSession() {
       const id = generateSessionId(APP_CONFIG.sessionIdPrefix);
       const anchor = name.trim() || 'Booth Anchor';
       setAnchorName(anchor);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('tis_anchor_name', anchor);
+      }
       setSessionId(id);
       setTranscript(trimmedText);
       setIsProcessing(true);
       setPhase('processing');
       setErrorMessage('');
 
+      const stage2Label = 'Model is analyzing conversation...';
+      const stage3Label = 'Structuring speaker dialogue & sentiments...';
+
       const stages: ProcessingStage[] = [
         { label: 'Feedback text captured', status: 'complete' },
         { label: 'Transcript prepared', status: 'complete' },
-        { label: 'Analyzing feedback', status: 'active' },
-        { label: 'Creating structured insight', status: 'pending' },
-        { label: 'Saving to Firebase', status: 'pending' },
+        { label: stage2Label, status: 'active' },
+        { label: stage3Label, status: 'pending' },
+        { label: 'Saving record...', status: 'pending' },
       ];
       setProcessingStages([...stages]);
 
       try {
+        const groq = groqEngineRef.current ?? new GroqEngine();
         const slm = slmEngineRef.current ?? new FeedbackSLMEngine();
-        const result = await slm.analyze(
-          {
-            transcript: trimmedText,
-            sessionId: id,
-            anchorName: anchor,
-            timestamp: nowISO(),
-          },
-          (progress) => {
-            if (progress.stage === 'analyzing') {
-              stages[2] = { label: 'Analyzing feedback', status: 'active' };
-              setProcessingStages([...stages]);
-            } else if (progress.stage === 'structuring') {
-              stages[2] = { label: 'Analyzing feedback', status: 'complete' };
-              stages[3] = { label: 'Creating structured insight', status: 'active' };
-              setProcessingStages([...stages]);
-            } else if (progress.stage === 'complete') {
-              stages[3] = { label: 'Creating structured insight', status: 'complete' };
-              setProcessingStages([...stages]);
-            }
+        const useGroq = isGroqConfigured();
+
+        let result: StructuredFeedback | null = null;
+        if (useGroq) {
+          try {
+            result = await groq.analyze(
+              {
+                transcript: trimmedText,
+                sessionId: id,
+                anchorName: anchor,
+                timestamp: nowISO(),
+              },
+              (progress) => {
+                if (progress.stage === 'analyzing') {
+                  stages[2] = { label: stage2Label, status: 'active' };
+                  setProcessingStages([...stages]);
+                } else if (progress.stage === 'structuring') {
+                  stages[2] = { label: stage2Label, status: 'complete' };
+                  stages[3] = { label: stage3Label, status: 'active' };
+                  setProcessingStages([...stages]);
+                } else if (progress.stage === 'complete') {
+                  stages[3] = { label: stage3Label, status: 'complete' };
+                  setProcessingStages([...stages]);
+                }
+              }
+            );
+          } catch (groqErr) {
+            console.warn('Primary model failed, activating on-device backup engine:', groqErr);
+            result = null;
           }
-        );
+        }
+
+        // On primary failure or if not configured, use local engine backup so submission never fails
+        if (!result) {
+          stages[2] = { label: stage2Label, status: 'active' };
+          setProcessingStages([...stages]);
+
+          const slmResult = await slm.analyze(
+            {
+              transcript: trimmedText,
+              sessionId: id,
+              anchorName: anchor,
+              timestamp: nowISO(),
+            },
+            (progress) => {
+              if (progress.stage === 'analyzing') {
+                stages[2] = { label: stage2Label, status: 'active' };
+                setProcessingStages([...stages]);
+              } else if (progress.stage === 'structuring') {
+                stages[2] = { label: stage2Label, status: 'complete' };
+                stages[3] = { label: stage3Label, status: 'active' };
+                setProcessingStages([...stages]);
+              } else if (progress.stage === 'complete') {
+                stages[3] = { label: stage3Label, status: 'complete' };
+                setProcessingStages([...stages]);
+              }
+            }
+          );
+
+          result = {
+            ...slmResult,
+            anchorSpeech: `Interview conducted by ${anchor}`,
+            participantSpeech: trimmedText,
+            participantSentiment: slmResult.sentiment,
+            dialogue: [
+              { speaker: 'anchor', text: `Questions asked by ${anchor}` },
+              { speaker: 'participant', text: trimmedText },
+            ],
+          };
+        }
 
         const validation = slm.validate(result);
         if (!validation.valid) {
@@ -176,9 +246,10 @@ export function useSession() {
             timerRef.current = null;
           }
         }
-      }
+      },
+      transcript
     );
-  }, [initEngines]);
+  }, [initEngines, transcript]);
 
   const stopRecording = useCallback(() => {
     if (speechEngineRef.current) {
@@ -209,38 +280,91 @@ export function useSession() {
     setPhase('processing');
     setErrorMessage('');
 
+    const stage2Label = 'Model is analyzing conversation...';
+    const stage3Label = 'Structuring speaker dialogue & sentiments...';
+
     const stages: ProcessingStage[] = [
       { label: 'Speech captured', status: 'complete' },
       { label: 'Transcript prepared', status: 'complete' },
-      { label: 'Analyzing feedback', status: 'active' },
-      { label: 'Creating structured insight', status: 'pending' },
-      { label: 'Saving to Firebase', status: 'pending' },
+      { label: stage2Label, status: 'active' },
+      { label: stage3Label, status: 'pending' },
+      { label: 'Saving record...', status: 'pending' },
     ];
     setProcessingStages([...stages]);
 
     try {
+      const groq = groqEngineRef.current ?? new GroqEngine();
       const slm = slmEngineRef.current ?? new FeedbackSLMEngine();
-      const result = await slm.analyze(
-        {
-          transcript: transcript.trim(),
-          sessionId,
-          anchorName,
-          timestamp: nowISO(),
-        },
-        (progress) => {
-          if (progress.stage === 'analyzing') {
-            stages[2] = { label: 'Analyzing feedback', status: 'active' };
-            setProcessingStages([...stages]);
-          } else if (progress.stage === 'structuring') {
-            stages[2] = { label: 'Analyzing feedback', status: 'complete' };
-            stages[3] = { label: 'Creating structured insight', status: 'active' };
-            setProcessingStages([...stages]);
-          } else if (progress.stage === 'complete') {
-            stages[3] = { label: 'Creating structured insight', status: 'complete' };
-            setProcessingStages([...stages]);
-          }
+      const useGroq = isGroqConfigured();
+
+      let result: StructuredFeedback | null = null;
+      if (useGroq) {
+        try {
+          result = await groq.analyze(
+            {
+              transcript: transcript.trim(),
+              sessionId,
+              anchorName,
+              timestamp: nowISO(),
+            },
+            (progress) => {
+              if (progress.stage === 'analyzing') {
+                stages[2] = { label: stage2Label, status: 'active' };
+                setProcessingStages([...stages]);
+              } else if (progress.stage === 'structuring') {
+                stages[2] = { label: stage2Label, status: 'complete' };
+                stages[3] = { label: stage3Label, status: 'active' };
+                setProcessingStages([...stages]);
+              } else if (progress.stage === 'complete') {
+                stages[3] = { label: stage3Label, status: 'complete' };
+                setProcessingStages([...stages]);
+              }
+            }
+          );
+        } catch (groqErr) {
+          console.warn('Primary model failed, activating on-device backup engine:', groqErr);
+          result = null;
         }
-      );
+      }
+
+      // On primary failure or if not configured, use local engine backup so submission never fails
+      if (!result) {
+        stages[2] = { label: stage2Label, status: 'active' };
+        setProcessingStages([...stages]);
+
+        const slmResult = await slm.analyze(
+          {
+            transcript: transcript.trim(),
+            sessionId,
+            anchorName,
+            timestamp: nowISO(),
+          },
+          (progress) => {
+            if (progress.stage === 'analyzing') {
+              stages[2] = { label: stage2Label, status: 'active' };
+              setProcessingStages([...stages]);
+            } else if (progress.stage === 'structuring') {
+              stages[2] = { label: stage2Label, status: 'complete' };
+              stages[3] = { label: stage3Label, status: 'active' };
+              setProcessingStages([...stages]);
+            } else if (progress.stage === 'complete') {
+              stages[3] = { label: stage3Label, status: 'complete' };
+              setProcessingStages([...stages]);
+            }
+          }
+        );
+
+        result = {
+          ...slmResult,
+          anchorSpeech: `Interview conducted by ${anchorName}`,
+          participantSpeech: transcript.trim(),
+          participantSentiment: slmResult.sentiment,
+          dialogue: [
+            { speaker: 'anchor', text: `Questions asked by ${anchorName}` },
+            { speaker: 'participant', text: transcript.trim() },
+          ],
+        };
+      }
 
       const validation = slm.validate(result);
       if (!validation.valid) {
@@ -271,7 +395,7 @@ export function useSession() {
       { label: 'Transcript prepared', status: 'complete' },
       { label: 'Analyzing feedback', status: 'complete' },
       { label: 'Creating structured insight', status: 'complete' },
-      { label: 'Saving to Firebase', status: 'active' },
+      { label: 'Saving record...', status: 'active' },
     ];
     setProcessingStages([...stages]);
     setPhase('processing');
@@ -282,17 +406,17 @@ export function useSession() {
 
       if (result.success) {
         setSubmitResult(result);
-        stages[4] = { label: 'Saving to Firebase', status: 'complete' };
+        stages[4] = { label: 'Saving record...', status: 'complete' };
         setProcessingStages([...stages]);
         setPhase('success');
         setIsProcessing(false);
       } else {
-        setErrorMessage(result.error || 'Firebase submission failed.');
+        setErrorMessage(result.error || 'Submission failed.');
         setPhase('error');
         setIsProcessing(false);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Firebase submission failed.';
+      const msg = err instanceof Error ? err.message : 'Submission failed.';
       setErrorMessage(msg);
       setPhase('error');
       setIsProcessing(false);
@@ -325,7 +449,8 @@ export function useSession() {
   const cancelSession = useCallback(() => {
     clearSession();
     setPhase('welcome');
-    setAnchorName('');
+    const rememberedName = (typeof window !== 'undefined' && window.localStorage.getItem('tis_anchor_name')) || '';
+    setAnchorName(rememberedName);
     setSessionId('');
   }, [clearSession]);
 
@@ -354,10 +479,8 @@ export function useSession() {
     updateTranscript,
     submitFeedback,
     submitToFirebase,
-    submitToGitHub: submitToFirebase, // Alias for backward compatibility
     updateFeedback,
     retrySubmit,
-    retryGitHub: retrySubmit, // Alias for backward compatibility
     startNewConversation,
     cancelSession,
     backToConversation,

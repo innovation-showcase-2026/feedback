@@ -1,6 +1,6 @@
 import React from 'react';
 import type { FirebaseSubmitResult } from '../types';
-import { CheckIcon, ArrowRightIcon, CloudIcon } from '../components/icons';
+import { CheckIcon, ArrowRightIcon } from '../components/icons';
 import { InnovationBackground, GoldDivider } from '../components/InnovationBackground';
 import { WFTheme } from '../theme';
 
@@ -37,7 +37,7 @@ export function SuccessScreen({ sessionId, anchorName, submitResult, onStartNew 
             Insight Captured
           </h1>
           <p className="text-xs text-[#4A4A50] mt-1 text-center max-w-xs">
-            Feedback successfully recorded in Firebase Firestore!
+            Feedback successfully recorded!
           </p>
         </div>
 
@@ -60,17 +60,10 @@ export function SuccessScreen({ sessionId, anchorName, submitResult, onStartNew 
           <GoldDivider />
 
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold text-[#6B6B70] uppercase tracking-wider">Firestore Collection</span>
+            <span className="text-[10px] font-bold text-[#6B6B70] uppercase tracking-wider">Collection Path</span>
             <span className="text-xs font-mono font-semibold text-[#1A1A1C] bg-[#FFF8E7] px-2 py-0.5 rounded border border-[#FFEBA8]">
               {collectionName}
             </span>
-          </div>
-
-          <GoldDivider />
-
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold text-[#6B6B70] uppercase tracking-wider">Firebase Project</span>
-            <span className="text-xs font-mono text-[#4A4A50]">innovation-feedback-2026</span>
           </div>
 
           <GoldDivider />
@@ -79,14 +72,14 @@ export function SuccessScreen({ sessionId, anchorName, submitResult, onStartNew 
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
               <span className="text-[10px] font-bold text-[#6B6B70] uppercase tracking-wider">
-                Cloud Firestore Live Record
+                Live Record Path
               </span>
             </div>
             <div className="text-xs font-mono text-[#4A4A50] break-all bg-[#FAF9F7] p-2.5 rounded-lg border border-[#E8E8EA] flex items-center justify-between">
               <span>{collectionName}/{documentId}</span>
-              <CloudIcon size={14} color="#10B981" />
+              <CheckIcon size={14} color="#10B981" />
             </div>
-            <p className="text-[10px] text-[#9A9A9F]">Document stored in real-time Cloud Firestore database.</p>
+            <p className="text-[10px] text-[#9A9A9F]">Feedback record securely saved and synced.</p>
           </div>
         </div>
 

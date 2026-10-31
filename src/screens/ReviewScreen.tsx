@@ -61,21 +61,99 @@ export function ReviewScreen({ feedback, onUpdate, onSubmit, onBack }: ReviewScr
           />
         </div>
 
+        {/* Speaker Separation Section */}
+        {(feedback.anchorSpeech || feedback.participantSpeech || (feedback.dialogue && feedback.dialogue.length > 0)) && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E8EA] space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold text-[#1A1A1C] uppercase tracking-wider flex items-center gap-1.5">
+                ⚡ Speaker Separation
+              </h2>
+              {feedback.participantSentiment && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize bg-[#FEF2F2] text-[#D52B1E] border border-[#F8C5C5]">
+                  Participant: {feedback.participantSentiment}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Anchor Speech */}
+              <div className="bg-[#FAF9F7] p-3 rounded-xl border border-[#E8E8EA]">
+                <label className="block text-[11px] font-bold text-[#D52B1E] uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Anchor ({feedback.anchorName})</span>
+                  <span className="text-[10px] font-normal text-[#6B6B70] lowercase">interviewer</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={feedback.anchorSpeech || ''}
+                  onChange={(e) => update({ anchorSpeech: e.target.value })}
+                  placeholder="Anchor speech..."
+                  className="w-full bg-transparent text-xs text-[#1A1A1C] focus:outline-none resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Participant Speech */}
+              <div className="bg-[#FAF9F7] p-3 rounded-xl border border-[#E8E8EA]">
+                <label className="block text-[11px] font-bold text-[#1A1A1C] uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Participant / Visitor</span>
+                  <span className="text-[10px] font-normal text-[#6B6B70] lowercase">interviewee</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={feedback.participantSpeech || ''}
+                  onChange={(e) => update({ participantSpeech: e.target.value })}
+                  placeholder="Participant speech..."
+                  className="w-full bg-transparent text-xs text-[#1A1A1C] focus:outline-none resize-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            {/* Chronological Dialogue Turns */}
+            {feedback.dialogue && feedback.dialogue.length > 0 && (
+              <div className="pt-2 border-t border-[#E8E8EA] space-y-2">
+                <span className="text-[10px] font-bold text-[#6B6B70] uppercase tracking-wider block">
+                  Dialogue Turns
+                </span>
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                  {feedback.dialogue.map((turn, i) => (
+                    <div
+                      key={i}
+                      className={`p-2.5 rounded-xl text-xs ${
+                        turn.speaker === 'anchor'
+                          ? 'bg-[#FEF2F2] border border-[#F8C5C5] text-[#1A1A1C]'
+                          : 'bg-[#F0F0F2] border border-[#E8E8EA] text-[#1A1A1C]'
+                      }`}
+                    >
+                      <div className="text-[10px] font-bold uppercase tracking-wider mb-1">
+                        {turn.speaker === 'anchor' ? `🎤 Anchor (${feedback.anchorName})` : '👤 Participant'}
+                      </div>
+                      <p className="leading-relaxed">{turn.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Sentiment & Interest Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Sentiment */}
+          {/* Participant Sentiment */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E8EA]">
-            <label className="block text-xs font-bold text-[#1A1A1C] uppercase tracking-wider mb-2">
-              Overall Sentiment
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-[#1A1A1C] uppercase tracking-wider">
+                Participant Sentiment
+              </label>
+              <span className="text-[10px] text-[#6B6B70]">visitor mood</span>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {SENTIMENT_OPTIONS.map((s) => {
-                const isSelected = feedback.sentiment === s;
+                const currentSentiment = feedback.participantSentiment || feedback.sentiment;
+                const isSelected = currentSentiment === s;
                 return (
                   <button
                     key={s}
                     type="button"
-                    onClick={() => update({ sentiment: s })}
+                    onClick={() => update({ participantSentiment: s })}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
                       isSelected
                         ? s === 'negative'
@@ -205,7 +283,7 @@ export function ReviewScreen({ feedback, onUpdate, onSubmit, onBack }: ReviewScr
             }}
           >
             <CloudIcon size={20} color="#FFFFFF" />
-            <span>Save Record to Firebase</span>
+            <span>Save Feedback Record</span>
           </button>
         </div>
       </div>

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { APP_CONFIG } from '../config';
-import { ArrowRightIcon, UserIcon, CloudIcon } from '../components/icons';
+import { ArrowRightIcon, UserIcon } from '../components/icons';
 import { InnovationBackground, GoldDivider } from '../components/InnovationBackground';
 import { WFTheme } from '../theme';
-import { firebaseConfig, FEEDBACK_COLLECTION } from '../config/firebase';
 
 interface WelcomeScreenProps {
   onStart: (name: string) => void;
@@ -11,9 +10,13 @@ interface WelcomeScreenProps {
 }
 
 export function WelcomeScreen({ onStart, onSubmitFeedback }: WelcomeScreenProps) {
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('tis_anchor_name') || '';
+    }
+    return '';
+  });
   const [feedbackText, setFeedbackText] = useState('');
-  const [showFirebaseInfo, setShowFirebaseInfo] = useState(false);
 
   const trimmedName = name.trim();
   const trimmedFeedback = feedbackText.trim();
@@ -84,7 +87,12 @@ export function WelcomeScreen({ onStart, onSubmitFeedback }: WelcomeScreenProps)
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (typeof window !== 'undefined' && window.localStorage) {
+                    window.localStorage.setItem('tis_anchor_name', e.target.value.trim());
+                  }
+                }}
                 placeholder="e.g., Alex Johnson"
                 className="w-full pl-10 pr-4 py-3 bg-[#FAF9F7] rounded-xl border border-[#E8E8EA] text-sm text-[#1A1A1C] placeholder-[#9A9A9F] focus:outline-none focus:border-[#D52B1E] transition-all"
               />
@@ -149,51 +157,6 @@ export function WelcomeScreen({ onStart, onSubmitFeedback }: WelcomeScreenProps)
             )}
           </div>
         </div>
-
-        {/* Firebase Connection Strip */}
-        <div
-          onClick={() => setShowFirebaseInfo(!showFirebaseInfo)}
-          className="bg-white/80 backdrop-blur-sm border border-[#E8E8EA] rounded-xl px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-white transition-all mb-3 shadow-xs"
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-            <span className="text-xs font-medium text-[#4A4A50]">
-              Firebase Cloud: <span className="font-semibold text-[#1A1A1C]">{firebaseConfig.projectId}</span>
-            </span>
-          </div>
-          <span className="text-xs font-semibold text-[#6B6B70]">
-            {showFirebaseInfo ? '▲ Close' : '⚙️ Details'}
-          </span>
-        </div>
-
-        {/* Firebase Info Drawer */}
-        {showFirebaseInfo && (
-          <div className="bg-white border border-[#E8E8EA] rounded-2xl p-4 mb-4 shadow-sm space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-[#1A1A1C] uppercase tracking-wider flex items-center gap-1.5">
-                <CloudIcon size={14} color="#D52B1E" />
-                Firebase Cloud Firestore
-              </h3>
-              <span className="text-[10px] font-bold text-[#10B981] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
-                Connected
-              </span>
-            </div>
-            <p className="text-[11px] text-[#6B6B70]">
-              Every feedback record is stored directly into your Firebase Firestore collection.
-            </p>
-            <GoldDivider />
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <span className="text-[10px] font-bold text-[#6B6B70] uppercase">Collection</span>
-                <p className="font-mono text-xs font-bold text-[#D52B1E]">{FEEDBACK_COLLECTION}</p>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-[#6B6B70] uppercase">Project ID</span>
-                <p className="font-mono text-xs text-[#1A1A1C]">{firebaseConfig.projectId}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <footer className="text-center text-[11px] text-[#9A9A9F] mt-4 font-medium">
           {APP_CONFIG.summitTitle}

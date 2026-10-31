@@ -1,6 +1,11 @@
 export type Sentiment = 'positive' | 'neutral' | 'negative' | 'mixed';
 export type InterestLevel = 'high' | 'medium' | 'low';
 
+export interface DialogueTurn {
+  speaker: 'anchor' | 'participant';
+  text: string;
+}
+
 export interface StructuredFeedback {
   sessionId: string;
   anchorName: string;
@@ -14,6 +19,10 @@ export interface StructuredFeedback {
   suggestions: string[];
   followUpRequired: boolean;
   transcript: string;
+  anchorSpeech?: string;
+  participantSpeech?: string;
+  participantSentiment?: Sentiment;
+  dialogue?: DialogueTurn[];
 }
 
 export type SessionPhase =
@@ -31,13 +40,6 @@ export interface ProcessingStage {
   status: 'pending' | 'active' | 'complete';
 }
 
-export interface GitHubConfig {
-  owner: string;
-  repo: string;
-  branch: string;
-  token: string;
-}
-
 export interface SessionMetadata {
   sessionId: string;
   anchorName: string;
@@ -52,13 +54,4 @@ export interface FirebaseSubmitResult {
   error?: string;
 }
 
-export interface GitHubSubmitResult {
-  success: boolean;
-  commitSha?: string;
-  filePath?: string;
-  error?: string;
-}
-
 export type SubmitResult = FirebaseSubmitResult;
-
-
