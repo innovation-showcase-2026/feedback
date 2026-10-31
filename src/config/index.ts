@@ -4,3 +4,6 @@ export const APP_CONFIG = {
   sessionIdPrefix: 'TIS-2026',
   feedbackPath: 'feedback',
 } as const;
+
+export * from './firebase';
+export * from './groq';

@@ -1,5 +1,8 @@
 import { Groq } from 'groq-sdk';
 import type { StructuredFeedback, Sentiment, InterestLevel, DialogueTurn } from '../types';
+import { GROQ_API_KEY } from '../config/groq';
+
+export { GROQ_API_KEY };
 
 export interface GroqAnalyzeParams {
   transcript: string;
@@ -16,10 +19,16 @@ export interface GroqAnalyzeProgress {
 export type GroqProgressCallback = (progress: GroqAnalyzeProgress) => void;
 
 export function getGroqApiKey(): string {
+  // 1. Direct in-code key from config
+  if (GROQ_API_KEY && GROQ_API_KEY.trim().length > 0) {
+    return GROQ_API_KEY.trim();
+  }
+  // 2. Saved local storage key if customized
   if (typeof window !== 'undefined' && window.localStorage) {
     const saved = window.localStorage.getItem('groq_api_key');
     if (saved && saved.trim().length > 0) return saved.trim();
   }
+  // 3. Environment variable fallback
   try {
     const envKey = (import.meta as any).env?.VITE_GROQ_API_KEY;
     if (envKey && String(envKey).trim().length > 0) {
