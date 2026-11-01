@@ -66,8 +66,7 @@ export function useSession() {
       timerRef.current = null;
     }
     if (speechEngineRef.current) {
-      speechEngineRef.current.destroy();
-      speechEngineRef.current = null;
+      speechEngineRef.current.reset();
     }
   }, []);
 
@@ -271,6 +270,10 @@ export function useSession() {
   }, []);
 
   const submitFeedback = useCallback(async () => {
+    if (speechEngineRef.current && speechEngineRef.current.isRecording()) {
+      stopRecording();
+    }
+
     if (!transcript.trim() || transcript.trim().length < 3) {
       setErrorMessage('Transcript is too short. Please record a conversation before submitting.');
       return;
@@ -433,6 +436,9 @@ export function useSession() {
   }, [submitToFirebase]);
 
   const startNewConversation = useCallback(() => {
+    if (speechEngineRef.current && speechEngineRef.current.isRecording()) {
+      speechEngineRef.current.stop();
+    }
     clearSession();
     const newId = generateSessionId(APP_CONFIG.sessionIdPrefix);
     setSessionId(newId);
@@ -447,6 +453,9 @@ export function useSession() {
   }, [clearSession, initEngines]);
 
   const cancelSession = useCallback(() => {
+    if (speechEngineRef.current && speechEngineRef.current.isRecording()) {
+      speechEngineRef.current.stop();
+    }
     clearSession();
     setPhase('welcome');
     const rememberedName = (typeof window !== 'undefined' && window.localStorage.getItem('tis_anchor_name')) || '';

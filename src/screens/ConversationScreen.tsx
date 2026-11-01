@@ -29,6 +29,21 @@ export function ConversationScreen({
   const isRecording = recordingStatus === 'recording';
   const hasFeedback = transcript.trim().length >= 3;
 
+  React.useEffect(() => {
+    return () => {
+      if (recordingStatus === 'recording') {
+        onStopRecording();
+      }
+    };
+  }, [recordingStatus, onStopRecording]);
+
+  const handleSubmit = () => {
+    if (isRecording) {
+      onStopRecording();
+    }
+    onSubmit();
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF9F7] text-[#1A1A1C] relative flex flex-col justify-between">
       <InnovationBackground variant="light" />
@@ -115,7 +130,7 @@ export function ConversationScreen({
 
           <button
             type="button"
-            onClick={onSubmit}
+            onClick={handleSubmit}
             disabled={!hasFeedback}
             className={`flex-1 py-3 px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all ${
               hasFeedback
